@@ -13,9 +13,10 @@ namespace Compi_1
         List<Token> listaTokens;
         public List<Varia> listaVariables;
         public List<string> ListaPolaca;
+        public List<string> ListaPolaca_Master;
         List<string> ListaOpera;
         List<int> ListaTipos;
-
+        List<int> Prioridad;
         private int[] listasintactico = new int[500];
         public bool error = false;
 
@@ -25,10 +26,12 @@ namespace Compi_1
         int puntosintactico = 1;
         string aux;
         string aux2;
+        string aux3;
         int Op1, Op2;
         int convertido;
-
-
+        int Avisador = 0;
+        int ContadorIf = 1;
+        int contadorWhi = 1;
         int intentosRecuperar;
         TipoRecuperacion tipoRecuperacion;
 
@@ -201,7 +204,7 @@ namespace Compi_1
             /*72oplogX*/       {-24,-202,0,0,0,0,0,0,0,0,0},
             /*73oplogX*/       {-23,-202,0,0,0,0,0,0,0,0,0},
             /*74elsex*/        {-200,-202,0,0,0,0,0,0,0,0,0},
-            /*75elsex*/        {1036,-45,-202,0,0,0,0,0,0,0,0},
+            /*75elsex*/        {-12,1010,-11,-45,-202,0,0,0,0,0,0},
             /*76else1X*/       {-12,-41,1014,-11,-55,-202,0,0,0,0,0},
             /*77else1X*/       {1023,-202,0,0,0,0,0,0,0,0,0},
             /*78forcondX*/     {-53,-202,0,0,0,0,0,0,0,0,0},
@@ -319,11 +322,13 @@ namespace Compi_1
             listaError = new List<Error>();
             listaVariables = new List<Varia>();
             ListaPolaca = new List<string>();
+            ListaPolaca_Master = new List<string>();
             listaTokens = listaTokenLexico;
             listaTokens.Add(new Token() { Lexema = "@", Linea = 0, TipoToken = TipoToken.Cadena, ValorToken = -201 });
             
             ListaOpera = new List<string>();
             ListaTipos = new List<int>();
+            Prioridad = new List<int>();
             listasintactico[0] = -201;
             listasintactico[1] = 1000;
 
@@ -489,8 +494,10 @@ namespace Compi_1
 
                                 }
                                 aux2 = listaTokens[puntolexico].Lexema;
+
+                                ListaPolaca_Master.Add(aux2);
                             }
-                            
+
                             puntolexico++;
 
                         }
@@ -506,34 +513,49 @@ namespace Compi_1
                                 }
                             }
                         }
-                        
-                        if (regla == 17 || regla == 18)
-                            ListaPolaca.Add(listaTokens[puntolexico].ValorToken.ToString());
-                        
 
-                        if (regla == 37 || regla == 38 || regla == 39 || regla == 40|| regla==144|| (reglon==18 && columna==5))
+                        if (regla == 17 || regla == 18)
+                        {
+                            ListaPolaca.Add(listaTokens[puntolexico].ValorToken.ToString());
+                            ListaPolaca_Master.Add(listaTokens[puntolexico].Lexema);
+                            if (aux3 != null)
+                            {
+                                ListaPolaca_Master.Add(aux3);
+
+                                if (Avisador == 1)
+                                    ListaPolaca_Master.Add("BrF-A"+ContadorIf);
+                                if (Avisador == 2)
+                                    ListaPolaca_Master.Add("BrF-C"+contadorWhi);
+                            }
+                            aux3 = null;
+                        }
+
+                        if (regla == 37 || regla == 38 || regla == 39 || regla == 40 || regla == 144 || (reglon == 18 && columna == 5))
                         {
                             aux = listaTokens[puntolexico].Lexema;
 
                             Chequeo(); ;
                         }
 
-                        if (reglon==18 && columna == 6)
+                        if (reglon == 18 && columna == 6)
                         {
 
                             for (int i = 1; i <= ListaOpera.Count; i++)
-                            { 
+                            {
                                 ListaPolaca.Add(ListaOpera[ListaOpera.Count - i]);
+                                ListaPolaca_Master.Add(ListaOpera[ListaOpera.Count - i]);
                                 ListaOpera.RemoveAt(ListaOpera.Count - i);
                                 if (ListaOpera.Count == 1)
                                 {
                                     ListaPolaca.Add(ListaOpera[ListaOpera.Count - i]);
+                                    ListaPolaca_Master.Add(ListaOpera[ListaOpera.Count - i]);
                                     ListaOpera.RemoveAt(ListaOpera.Count - i);
                                 }
 
                             }
-                            
+
                             Comprobacion_Posfijo();
+                            ListaPolaca_Master.Add("=");
                             if (listaVariables.Exists(x => x.Id == aux2) == true)
                             {
                                 if (ListaTipos.Count == 1)
@@ -565,21 +587,88 @@ namespace Compi_1
 
                                 }
                             }
-                            
+
                         }
-                        
-                        if (regla==55 || regla==58)
+                        //If y while 
+                        if (regla == 55 || regla == 58)
                         {
-                            if (listaTokens[puntolexico+1].ValorToken == -1)
+                            if (listaTokens[puntolexico + 1].ValorToken == -1)
                             {
-                                if (listaVariables.Exists(x => x.Id == listaTokens[puntolexico+1].Lexema) == false)
+                                if (listaVariables.Exists(x => x.Id == listaTokens[puntolexico + 1].Lexema) == false)
                                 {
                                     var nuevoError = ManejoErroresSemantico(-703, listaTokens[puntolexico].Linea);
                                     listaError.Add(nuevoError);
 
                                 }
-                                
+                                else if (regla == 55)
+                                {
+                                    ListaPolaca_Master.Add(listaTokens[puntolexico + 1].Lexema);
+
+                                    Avisador = 1;
+                                    Prioridad.Add(Avisador);
+                                }
+                                else if (regla == 58)
+                                {
+                                    ListaPolaca_Master.Add("D"+contadorWhi);
+                                    ListaPolaca_Master.Add(listaTokens[puntolexico + 1].Lexema);
+                                    Avisador = 2;
+                                    Prioridad.Add(Avisador);
+                                    
+                                }
+
+
                             }
+
+                        }
+
+                        if (regla == 67 || regla == 68 || regla == 69 || regla == 70 || regla == 71 || regla == 72)
+                            aux3 = listaTokens[puntolexico].Lexema;
+
+                        if ((reglon == 10 && columna == 11) && Avisador == 1)
+                        {
+                            if (listaTokens[puntolexico + 1].Lexema == "else")
+                            {
+                                ListaPolaca_Master.Add("BrI-B"+ContadorIf);
+                            }
+                            else
+                            {
+                                if (ListaPolaca_Master.Exists(x => x == "A" + ContadorIf) == true)
+                                {
+                                    ListaPolaca_Master.Add("B" + ContadorIf);
+                                    ContadorIf++;
+                                    Prioridad.RemoveAt(Prioridad.Count - 1);
+                                    if (Prioridad.Count == 0)
+                                        Avisador = 0;
+                                    else
+                                        Avisador = Prioridad[Prioridad.Count - 1];
+                                }
+                                else
+                                {
+                                    ListaPolaca_Master.Add("A" + ContadorIf);
+                                    ContadorIf++;
+                                    Prioridad.RemoveAt(Prioridad.Count - 1);
+                                    if (Prioridad.Count == 0)
+                                        Avisador = 0;
+                                    else
+                                        Avisador = Prioridad[Prioridad.Count - 1];
+                                }
+                            }
+                        }
+
+                        if ((reglon == 10 && columna == 11) && Avisador == 2)
+                        {
+                            ListaPolaca_Master.Add("BrI-D"+contadorWhi);
+                            ListaPolaca_Master.Add("C" + contadorWhi);
+                            contadorWhi++;
+                            Prioridad.RemoveAt(Prioridad.Count-1);
+                            if (Prioridad.Count==0)
+                                Avisador = 0;
+                            else
+                            Avisador = Prioridad[Prioridad.Count-1];
+                        }
+                        if (regla == 76)
+                        {
+                            ListaPolaca_Master.Add("A" + ContadorIf);
                         }
 
                         VerificarRecuperacion();
@@ -1455,6 +1544,7 @@ namespace Compi_1
                     for (int i = ListaOpera.Count; true; i--)
                     {
                         ListaPolaca.Add(ListaOpera[i-1]);
+                        ListaPolaca_Master.Add(ListaOpera[i - 1]);
                         ListaOpera.RemoveAt(i-1);
                         if (ListaOpera.Count == 1 )
                         {
@@ -1511,10 +1601,12 @@ namespace Compi_1
                         for (int i = 1; i <= ListaOpera.Count; i++)
                         {
                             ListaPolaca.Add(ListaOpera[ListaOpera.Count - i]);
+                            ListaPolaca_Master.Add(ListaOpera[ListaOpera.Count - i]);
                             ListaOpera.RemoveAt(ListaOpera.Count - i);
                             if (ListaOpera.Count == 1)
                             {
                                 ListaPolaca.Add(ListaOpera[ListaOpera.Count-i]);
+                                ListaPolaca_Master.Add(ListaOpera[ListaOpera.Count - i]);
                                 ListaOpera.RemoveAt(ListaOpera.Count - i);
                             }
                             
@@ -1524,6 +1616,7 @@ namespace Compi_1
                     else if (ListaOpera[ListaOpera.Count - 1] == "+" || ListaOpera[ListaOpera.Count - 1] == "-")
                     {
                         ListaPolaca.Add(ListaOpera[ListaOpera.Count - 1]);
+                        ListaPolaca_Master.Add(ListaOpera[ListaOpera.Count - 1]);
                         ListaOpera[ListaOpera.Count - 1] = aux;
                     }
                     else if (ListaOpera[ListaOpera.Count - 1] == "(")
@@ -1536,6 +1629,7 @@ namespace Compi_1
                     if (ListaOpera[ListaOpera.Count-1] == "*" || ListaOpera[ListaOpera.Count-1] == "/")
                     {
                         ListaPolaca.Add(ListaOpera[ListaOpera.Count - 1]);
+                        ListaPolaca_Master.Add(ListaOpera[ListaOpera.Count - 1]);
                         ListaOpera[ListaOpera.Count - 1] = aux;
                     }
                     else if (ListaOpera[ListaOpera.Count-1] == "+" || ListaOpera[ListaOpera.Count-1] == "-")
@@ -1552,6 +1646,7 @@ namespace Compi_1
                     if (ListaOpera[ListaOpera.Count - 1] == "*" || ListaOpera[ListaOpera.Count - 1] == "/")
                     {
                         ListaPolaca.Add(ListaOpera[ListaOpera.Count - 1]);
+                        ListaPolaca_Master.Add(ListaOpera[ListaOpera.Count - 1]);
                         ListaOpera[ListaOpera.Count - 1] = aux;
                     }
                     else if (ListaOpera[ListaOpera.Count - 1] == "+" || ListaOpera[ListaOpera.Count - 1] == "-")
@@ -1562,6 +1657,7 @@ namespace Compi_1
                     
 
                 }
+                
             }
 
 
